@@ -18,10 +18,6 @@ This module will deploy hashicorp vault into a pre-existing AKS cluster
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:-----:|
 | identity\_name | name for Azure identity to be used by AAD | `string` | `"aks-aad"` | no |
-| kubectl\_client\_certificate | kubernetes client certificate | `string` | n/a | yes |
-| kubectl\_client\_key | kubernetes certificate key | `string` | n/a | yes |
-| kubectl\_cluster\_ca\_certificate | kubernetes certificate bundle | `string` | n/a | yes |
-| kubectl\_host | kubernetes hostname | `string` | n/a | yes |
 | kubernetes\_namespace | kubernetes namespace where vault will be installed | `string` | `"default"` | no |
 | location | Azure Region | `string` | n/a | yes |
 | names | names to be applied to resources | `map(string)` | n/a | yes |
