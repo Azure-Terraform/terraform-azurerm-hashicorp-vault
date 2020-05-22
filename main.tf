@@ -1,12 +1,3 @@
-provider "helm" {
-  kubernetes {
-    host                   = var.kubectl_host
-    client_certificate     = base64decode(var.kubectl_client_certificate)
-    client_key             = base64decode(var.kubectl_client_key)
-    cluster_ca_certificate = base64decode(var.kubectl_cluster_ca_certificate)
-  }
-}
-
 resource "azurerm_key_vault" "kv" {
   name                 = "${var.names.product_group}${var.names.subscription_type}hashivault" 
   location             = var.location
@@ -122,30 +113,20 @@ resource "azurerm_key_vault_access_policy" "vault_init" {
 }
 
 module "vault_identity" {
-  source = "/Users/tmiller/gitlab-repos/tfe/terraform-azurerm-kubernetes/identity"
+  source = "/Users/tmiller/gitlab-repos/tfe/terraform-azurerm-kubernetes/aad-pod-identity/identity"
 
-    kubectl_host                   = var.kubectl_host
-    kubectl_client_certificate     = var.kubectl_client_certificate
-    kubectl_client_key             = var.kubectl_client_key
-    kubectl_cluster_ca_certificate = var.kubectl_cluster_ca_certificate
-
-    identity_name        = azurerm_user_assigned_identity.vault.name
-    identity_client_id   = azurerm_user_assigned_identity.vault.client_id
-    identity_resource_id = azurerm_user_assigned_identity.vault.id
+  identity_name        = azurerm_user_assigned_identity.vault.name
+  identity_client_id   = azurerm_user_assigned_identity.vault.client_id
+  identity_resource_id = azurerm_user_assigned_identity.vault.id
 
 }
 
 module "vault_init_identity" {
-  source = "/Users/tmiller/gitlab-repos/tfe/terraform-azurerm-kubernetes/identity"
+  source = "/Users/tmiller/gitlab-repos/tfe/terraform-azurerm-kubernetes/aad-pod-identity/identity"
 
-    kubectl_host                   = var.kubectl_host
-    kubectl_client_certificate     = var.kubectl_client_certificate
-    kubectl_client_key             = var.kubectl_client_key
-    kubectl_cluster_ca_certificate = var.kubectl_cluster_ca_certificate
-
-    identity_name        = azurerm_user_assigned_identity.vault_init.name
-    identity_client_id   = azurerm_user_assigned_identity.vault_init.client_id
-    identity_resource_id = azurerm_user_assigned_identity.vault_init.id
+  identity_name        = azurerm_user_assigned_identity.vault_init.name
+  identity_client_id   = azurerm_user_assigned_identity.vault_init.client_id
+  identity_resource_id = azurerm_user_assigned_identity.vault_init.id
 
 }
 
@@ -159,7 +140,7 @@ resource "helm_release" "vault" {
   create_namespace = true
 
   values = [
-    templatefile("${path.module}/vault_config.yaml.tmpl", {
+    templatefile("${path.module}/config/vault_config.yaml.tmpl", {
       tenant_id                = data.azurerm_client_config.current.tenant_id
       vault_name               = azurerm_key_vault.kv.name
       key_name                 = azurerm_key_vault_key.generated.name
