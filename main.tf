@@ -25,12 +25,13 @@ resource "azurerm_key_vault" "kv" {
          })
 }
 
-resource "azurerm_key_vault_access_policy" "current" {
+resource "azurerm_key_vault_access_policy" "manager" {
+  for_each = local.key_vault_managers
 
   key_vault_id = azurerm_key_vault.kv.id
 
-  tenant_id = data.azurerm_client_config.current.tenant_id
-  object_id = data.azurerm_client_config.current.object_id
+  tenant_id = each.value.tenant_id
+  object_id = each.value.object_id
 
   key_permissions = [
     "create",
@@ -50,7 +51,7 @@ resource "azurerm_key_vault_access_policy" "current" {
 }
 
 resource "azurerm_key_vault_key" "generated" {
-  depends_on   = [azurerm_key_vault_access_policy.current]
+  depends_on   = [azurerm_key_vault_access_policy.manager]
   name         = "hashicorp-vault-key"
   key_vault_id = azurerm_key_vault.kv.id
   key_type     = "RSA"
@@ -69,7 +70,7 @@ resource "azurerm_key_vault_key" "generated" {
 }
 
 resource "azurerm_key_vault_secret" "vault_init" {
-  depends_on   = [azurerm_key_vault_access_policy.current]
+  depends_on   = [azurerm_key_vault_access_policy.manager]
   name         = "hashicorp-vault-init"
   value        = ""
   key_vault_id = azurerm_key_vault.kv.id

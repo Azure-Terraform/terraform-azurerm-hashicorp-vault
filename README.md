@@ -20,6 +20,7 @@ This module will deploy hashicorp vault into a pre-existing AKS cluster
 |------|-------------|------|---------|:-----:|
 | additional\_yaml\_config | yaml config for helm chart to be processed last | `string` | `""` | no |
 | identity\_name | name for Azure identity to be used by AAD | `string` | `"aks-aad"` | no |
+| key\_vault\_managers | Azure identities/groups to be granted management access to Azure Key Vault (leave empty for object\_id running terraform) | <pre>map(object({<br>                  tenant_id = string<br>                  object_id = string }))</pre> | n/a | yes |
 | kubernetes\_namespace | kubernetes namespace where vault will be installed | `string` | `"default"` | no |
 | kubernetes\_node\_selector | kubernetes node selector labels | `map(string)` | `{}` | no |
 | location | Azure Region | `string` | n/a | yes |

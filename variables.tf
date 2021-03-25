@@ -32,6 +32,14 @@ variable "kubernetes_node_selector" {
   default     = {}
 }
 
+variable "key_vault_managers" {
+  description = "Azure identities/groups to be granted management access to Azure Key Vault (leave empty for object_id running terraform)"
+  type        = map(object({
+                  tenant_id = string
+                  object_id = string }))
+  default     = null
+}
+
 # AAD
 variable "identity_name" {
   description = "name for Azure identity to be used by AAD"
