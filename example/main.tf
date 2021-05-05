@@ -151,10 +151,7 @@ module "vault" {
 
   kubernetes_node_resource_group        = module.kubernetes.node_resource_group
   kubernetes_kubelet_identity_object_id = module.kubernetes.kubelet_identity.object_id
-
-  vault_ingress_enabled  = true
-  vault_ingress_hostname = "vault-test.lnrsg.io"
-
+  
   depends_on = [module.kubernetes]
 }
 
