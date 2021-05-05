@@ -1,19 +1,18 @@
-resource "random_string"  "kv" {
+resource "random_string" "kv" {
   length  = 3
   upper   = false
   special = false
 }
 
 resource "azurerm_key_vault" "kv" {
-  name                 = "${var.names.product_group}${var.names.subscription_type}hcv${random_string.kv.result}" 
-  location             = var.location
-  resource_group_name  = var.resource_group_name
-  tenant_id            = data.azurerm_client_config.current.tenant_id
+  name                = "${var.names.product_group}${var.names.subscription_type}hcv${random_string.kv.result}"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tenant_id           = data.azurerm_client_config.current.tenant_id
 
   sku_name = "standard"
 
   purge_protection_enabled = false
-  soft_delete_enabled      = true
 
   network_acls {
     default_action = "Allow"
@@ -21,8 +20,8 @@ resource "azurerm_key_vault" "kv" {
   }
 
   tags = merge(var.tags, {
-           "purpose"     = "HashiCorp Vault initialization info"
-         })
+    "purpose" = "HashiCorp Vault initialization info"
+  })
 }
 
 resource "azurerm_key_vault_access_policy" "current" {
@@ -65,7 +64,7 @@ resource "azurerm_key_vault_key" "generated" {
     "wrapKey",
   ]
 
-  tags                 = var.tags
+  tags = var.tags
 }
 
 resource "azurerm_key_vault_secret" "vault_init" {
@@ -74,7 +73,7 @@ resource "azurerm_key_vault_secret" "vault_init" {
   value        = ""
   key_vault_id = azurerm_key_vault.kv.id
 
-  tags           = var.tags
+  tags = var.tags
 
   lifecycle {
     ignore_changes = [value]
@@ -82,17 +81,17 @@ resource "azurerm_key_vault_secret" "vault_init" {
 }
 
 resource "azurerm_user_assigned_identity" "vault" {
-  name                 = "${var.names.product_group}-${var.names.subscription_type}-vault"
-  location             = var.location
-  resource_group_name  = var.resource_group_name
-  tags                 = var.tags
+  name                = "${var.names.product_group}-${var.names.subscription_type}-vault"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
 }
 
 resource "azurerm_user_assigned_identity" "vault_init" {
-  name                 = "${var.names.product_group}-${var.names.subscription_type}-vault-init"
-  location             = var.location
-  resource_group_name  = var.resource_group_name
-  tags                 = var.tags
+  name                = "${var.names.product_group}-${var.names.subscription_type}-vault-init"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
 }
 
 resource "azurerm_key_vault_access_policy" "vault" {
@@ -102,9 +101,9 @@ resource "azurerm_key_vault_access_policy" "vault" {
   object_id    = azurerm_user_assigned_identity.vault.principal_id
 
   key_permissions = [
-      "get",
-      "unwrapKey",
-      "wrapKey",
+    "get",
+    "unwrapKey",
+    "wrapKey",
   ]
 }
 
@@ -115,39 +114,49 @@ resource "azurerm_key_vault_access_policy" "vault_init" {
   object_id    = azurerm_user_assigned_identity.vault_init.principal_id
 
   secret_permissions = [
-      "get",
-      "set",
+    "get",
+    "set",
   ]
 }
 
-module "vault_identity" {
-  source = "git@github.com:Azure-Terraform/terraform-azurerm-kubernetes.git//aad-pod-identity/identity?ref=v1.1.0"
+module "aad_pod_identity" {
+  source = "github.com/Azure-Terraform/terraform-azurerm-kubernetes-aad-pod-identity.git?ref=v2.0.1"
 
-  identity_name        = azurerm_user_assigned_identity.vault.name
-  identity_client_id   = azurerm_user_assigned_identity.vault.client_id
-  identity_resource_id = azurerm_user_assigned_identity.vault.id
-}
+  enable_kubenet_plugin = true
 
-module "vault_init_identity" {
-  source = "git@github.com:Azure-Terraform/terraform-azurerm-kubernetes.git//aad-pod-identity/identity?ref=v1.1.0"
+  aks_node_resource_group = var.kubernetes_node_resource_group
+  additional_scopes       = { parent_rg = var.resource_group_id }
 
-  identity_name        = azurerm_user_assigned_identity.vault_init.name
-  identity_client_id   = azurerm_user_assigned_identity.vault_init.client_id
-  identity_resource_id = azurerm_user_assigned_identity.vault_init.id
+  aks_identity = var.kubernetes_kubelet_identity_object_id
+
+  identities = {
+    vault = {
+      name        = azurerm_user_assigned_identity.vault.name
+      namespace   = var.kubernetes_namespace
+      client_id   = azurerm_user_assigned_identity.vault.client_id
+      resource_id = azurerm_user_assigned_identity.vault.id
+    },
+    vault-init = {
+      name        = azurerm_user_assigned_identity.vault_init.name
+      namespace   = var.kubernetes_namespace
+      client_id   = azurerm_user_assigned_identity.vault_init.client_id
+      resource_id = azurerm_user_assigned_identity.vault_init.id
+    }
+  }
 }
 
 resource "helm_release" "vault" {
-  depends_on = [module.vault_identity]
+  depends_on = [module.aad_pod_identity]
 
-  name      = "vault"
-  chart     = "https://github.com/hashicorp/vault-helm/archive/v${var.vault_helm_chart_version}.tar.gz"
+  name  = "vault"
+  chart = "https://github.com/hashicorp/vault-helm/archive/v${var.vault_helm_chart_version}.tar.gz"
 
   namespace        = var.kubernetes_namespace
   create_namespace = true
 
   values = [
     templatefile("${path.module}/config/vault_config.yaml.tmpl", {
-      node_selector             = (length(var.kubernetes_node_selector) > 0 ? indent(4, chomp(yamlencode(var.kubernetes_node_selector))) : "")
+      node_selector            = (length(var.kubernetes_node_selector) > 0 ? indent(4, chomp(yamlencode(var.kubernetes_node_selector))) : "")
       tenant_id                = data.azurerm_client_config.current.tenant_id
       vault_name               = azurerm_key_vault.kv.name
       key_name                 = azurerm_key_vault_key.generated.name
@@ -181,13 +190,13 @@ resource "helm_release" "vault_rbac" {
 }
 
 resource "helm_release" "vault_init" {
-  depends_on = [module.vault_init_identity,helm_release.vault]
+  depends_on = [module.aad_pod_identity, helm_release.vault]
   name       = "vault-init"
   chart      = "${path.module}/charts/init"
 
-  namespace  = var.kubernetes_namespace
+  namespace = var.kubernetes_namespace
 
-  values= [yamlencode({
+  values = [yamlencode({
     "azureKeyVaultSecretTags" = base64encode(jsonencode(var.tags)),
     "azureKeyVaultSecretUrl"  = "${azurerm_key_vault.kv.vault_uri}secrets/${azurerm_key_vault_secret.vault_init.name}",
     "identityName"            = azurerm_user_assigned_identity.vault_init.name

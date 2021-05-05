@@ -1,5 +1,10 @@
 # Basics
-variable "resource_group_name"{
+variable "resource_group_id" {
+  description = "Resource group id"
+  type        = string
+}
+
+variable "resource_group_name" {
   description = "Resource group name"
   type        = string
 }
@@ -20,6 +25,16 @@ variable "tags" {
 }
 
 # Kubernetes 
+variable "kubernetes_node_resource_group" {
+  description = "Kubernetes node resource group"
+  type        = string
+}
+
+variable "kubernetes_kubelet_identity_object_id" {
+  description = "Kubernetes kubelet Identity object ID"
+  type        = string
+}
+
 variable "kubernetes_namespace" {
   description = "kubernetes namespace where vault will be installed"
   type        = string
