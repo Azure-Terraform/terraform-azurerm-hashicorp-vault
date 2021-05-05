@@ -10,8 +10,8 @@ This module will deploy hashicorp vault into a pre-existing AKS cluster
 
 | Name | Version |
 |------|---------|
-| azurerm | >= 2.0.0 |
-| helm | >= 1.2.1 |
+| azurerm | >= 2.57.0 |
+| helm | >= 2.1.0 |
 | random | n/a |
 
 ## Inputs
@@ -20,10 +20,13 @@ This module will deploy hashicorp vault into a pre-existing AKS cluster
 |------|-------------|------|---------|:-----:|
 | additional\_yaml\_config | yaml config for helm chart to be processed last | `string` | `""` | no |
 | identity\_name | name for Azure identity to be used by AAD | `string` | `"aks-aad"` | no |
+| kubernetes\_kubelet\_identity\_object\_id | Kubernetes kubelet Identity object ID | `string` | n/a | yes |
 | kubernetes\_namespace | kubernetes namespace where vault will be installed | `string` | `"default"` | no |
+| kubernetes\_node\_resource\_group | Kubernetes node resource group | `string` | n/a | yes |
 | kubernetes\_node\_selector | kubernetes node selector labels | `map(string)` | `{}` | no |
 | location | Azure Region | `string` | n/a | yes |
 | names | names to be applied to resources | `map(string)` | n/a | yes |
+| resource\_group\_id | Resource group id | `string` | n/a | yes |
 | resource\_group\_name | Resource group name | `string` | n/a | yes |
 | tags | tags to be applied to resources | `map(string)` | n/a | yes |
 | vault\_agent\_injector\_enabled | enable Vault Agent Injector | `bool` | `true` | no |
