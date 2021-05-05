@@ -2,7 +2,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = ">=2.51.0"
+      version = ">=2.57.0"
     }
     random = {
       source  = "hashicorp/random"
@@ -110,7 +110,7 @@ module "virtual_network" {
 }
 
 module "kubernetes" {
-  source = "github.com/Azure-Terraform/terraform-azurerm-kubernetes.git?ref=v3.0.2"
+  source = "github.com/Azure-Terraform/terraform-azurerm-kubernetes.git?ref=v3.2.4"
 
   location            = module.metadata.location
   names               = module.metadata.names
@@ -151,7 +151,7 @@ module "vault" {
 
   kubernetes_node_resource_group        = module.kubernetes.node_resource_group
   kubernetes_kubelet_identity_object_id = module.kubernetes.kubelet_identity.object_id
-  
+
   depends_on = [module.kubernetes]
 }
 
